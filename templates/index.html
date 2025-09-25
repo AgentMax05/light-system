@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LED Strip Controller</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-lightbulb"></i> LED Strip Controller</h1>
+            <div class="status-indicator" id="statusIndicator">
+                <span class="status-dot"></span>
+                <span id="statusText">Connecting...</span>
+            </div>
+        </header>
+
+        <main>
+            <!-- Control Panel -->
+            <section class="control-panel">
+                <div class="panel-grid">
+                    <!-- Pattern Selection -->
+                    <div class="control-group">
+                        <h3><i class="fas fa-palette"></i> Pattern</h3>
+                        <div class="pattern-grid">
+                            <button class="pattern-btn" data-pattern="solid">
+                                <i class="fas fa-circle"></i>
+                                <span>Solid</span>
+                            </button>
+                            <button class="pattern-btn" data-pattern="rainbow">
+                                <i class="fas fa-rainbow"></i>
+                                <span>Rainbow</span>
+                            </button>
+                            <button class="pattern-btn" data-pattern="chase">
+                                <i class="fas fa-running"></i>
+                                <span>Chase</span>
+                            </button>
+                            <button class="pattern-btn" data-pattern="fade">
+                                <i class="fas fa-adjust"></i>
+                                <span>Fade</span>
+                            </button>
+                            <button class="pattern-btn" data-pattern="breathing">
+                                <i class="fas fa-lungs"></i>
+                                <span>Breathing</span>
+                            </button>
+                            <button class="pattern-btn" data-pattern="twinkle">
+                                <i class="fas fa-star"></i>
+                                <span>Twinkle</span>
+                            </button>
+                            <button class="pattern-btn" data-pattern="wave">
+                                <i class="fas fa-wave-square"></i>
+                                <span>Wave</span>
+                            </button>
+                            <button class="pattern-btn" data-pattern="fire">
+                                <i class="fas fa-fire"></i>
+                                <span>Fire</span>
+                            </button>
+                            <button class="pattern-btn" data-pattern="music">
+                                <i class="fas fa-music"></i>
+                                <span>Music</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Color Controls -->
+                    <div class="control-group">
+                        <h3><i class="fas fa-paint-brush"></i> Colors</h3>
+                        <div class="color-controls">
+                            <div class="color-picker-group">
+                                <label>Primary Color:</label>
+                                <input type="color" id="primaryColor" value="#FF0000">
+                                <input type="text" id="primaryColorHex" value="#FF0000" placeholder="#FF0000">
+                            </div>
+                            <div class="color-picker-group">
+                                <label>Secondary Color:</label>
+                                <input type="color" id="secondaryColor" value="#0000FF">
+                                <input type="text" id="secondaryColorHex" value="#0000FF" placeholder="#0000FF">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Brightness Control -->
+                    <div class="control-group">
+                        <h3><i class="fas fa-sun"></i> Brightness</h3>
+                        <div class="slider-group">
+                            <input type="range" id="brightnessSlider" min="0" max="255" value="128">
+                            <span id="brightnessValue">128</span>
+                        </div>
+                    </div>
+
+                    <!-- Speed Control -->
+                    <div class="control-group">
+                        <h3><i class="fas fa-tachometer-alt"></i> Speed</h3>
+                        <div class="slider-group">
+                            <input type="range" id="speedSlider" min="0.1" max="10" step="0.1" value="1.0">
+                            <span id="speedValue">1.0x</span>
+                        </div>
+                    </div>
+
+                    <!-- Control Buttons -->
+                    <div class="control-group">
+                        <h3><i class="fas fa-play"></i> Controls</h3>
+                        <div class="button-group">
+                            <button id="startBtn" class="btn btn-success">
+                                <i class="fas fa-play"></i> Start
+                            </button>
+                            <button id="stopBtn" class="btn btn-danger">
+                                <i class="fas fa-stop"></i> Stop
+                            </button>
+                            <button id="clearBtn" class="btn btn-warning">
+                                <i class="fas fa-times"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Audio Controls -->
+                    <div class="control-group">
+                        <h3><i class="fas fa-microphone"></i> Audio</h3>
+                        <div class="button-group">
+                            <button id="startAudioBtn" class="btn btn-info">
+                                <i class="fas fa-microphone"></i> Start Audio
+                            </button>
+                            <button id="stopAudioBtn" class="btn btn-secondary">
+                                <i class="fas fa-microphone-slash"></i> Stop Audio
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Scheduling Panel -->
+            <section class="scheduling-panel">
+                <h3><i class="fas fa-clock"></i> Schedule Patterns</h3>
+                <div class="schedule-form">
+                    <select id="schedulePattern">
+                        <option value="solid">Solid</option>
+                        <option value="rainbow">Rainbow</option>
+                        <option value="chase">Chase</option>
+                        <option value="fade">Fade</option>
+                        <option value="breathing">Breathing</option>
+                        <option value="twinkle">Twinkle</option>
+                        <option value="wave">Wave</option>
+                        <option value="fire">Fire</option>
+                        <option value="music">Music</option>
+                    </select>
+                    <input type="time" id="scheduleTime" required>
+                    <input type="number" id="scheduleDuration" placeholder="Duration (min)" min="1" max="1440" value="60">
+                    <button id="addScheduleBtn" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Schedule
+                    </button>
+                </div>
+                <div id="scheduledList" class="scheduled-list"></div>
+            </section>
+
+            <!-- Settings Panel -->
+            <section class="settings-panel">
+                <h3><i class="fas fa-cog"></i> Settings</h3>
+                <div class="settings-grid">
+                    <button id="exportBtn" class="btn btn-outline">
+                        <i class="fas fa-download"></i> Export Settings
+                    </button>
+                    <button id="importBtn" class="btn btn-outline">
+                        <i class="fas fa-upload"></i> Import Settings
+                    </button>
+                    <input type="file" id="importFile" accept=".json" style="display: none;">
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
