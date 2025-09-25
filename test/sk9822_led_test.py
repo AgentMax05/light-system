@@ -17,12 +17,12 @@ except ImportError:
 
 
 class SK9822LEDTest:
-    def __init__(self, led_count=30, spi_bus=0, spi_device=0, brightness=128):
+    def __init__(self, led_count=60, spi_bus=0, spi_device=0, brightness=128):
         """
         Initialize SK9822 LED test
         
         Args:
-            led_count: Number of LEDs (default: 30)
+            led_count: Number of LEDs (default: 60)
             spi_bus: SPI bus number (default: 0)
             spi_device: SPI device number (default: 0)
             brightness: LED brightness 0-255 (default: 128)
@@ -39,7 +39,7 @@ class SK9822LEDTest:
             # Initialize SPI interface
             self.spi = spidev.SpiDev()
             self.spi.open(spi_bus, spi_device)
-            self.spi.max_speed_hz = 1000000  # 1MHz SPI speed
+            self.spi.max_speed_hz = 2000000  # 2MHz SPI speed for better performance
             self.spi.mode = 0b00  # SPI mode 0
             print("✅ SPI interface initialized successfully")
             
@@ -62,7 +62,7 @@ class SK9822LEDTest:
         # Send start frame + LED data + end frame
         data = start_frame + led_data + end_frame
         self.spi.xfer2(data)
-        print("🔴 All LEDs cleared")
+        print(f"🔴 All {self.led_count} LEDs cleared")
     
     def solid_color(self, red, green, blue):
         """Set all LEDs to the same color"""
@@ -79,11 +79,11 @@ class SK9822LEDTest:
         # Send start frame + LED data + end frame
         data = start_frame + led_data + end_frame
         self.spi.xfer2(data)
-        print(f"🎨 Set all LEDs to RGB({red}, {green}, {blue})")
+        print(f"🎨 Set all {self.led_count} LEDs to RGB({red}, {green}, {blue})")
     
     def rainbow_test(self, duration=5):
         """Simple rainbow pattern"""
-        print("🌈 Starting rainbow test...")
+        print(f"🌈 Starting rainbow test for {self.led_count} LEDs...")
         start_time = time.time()
         
         while time.time() - start_time < duration:
@@ -107,7 +107,7 @@ class SK9822LEDTest:
     
     def chase_test(self, duration=5):
         """Simple chase pattern"""
-        print("🏃 Starting chase test...")
+        print(f"🏃 Starting chase test for {self.led_count} LEDs...")
         start_time = time.time()
         position = 0
         
@@ -138,7 +138,7 @@ class SK9822LEDTest:
     
     def breathing_test(self, duration=5):
         """Breathing effect"""
-        print("🫁 Starting breathing test...")
+        print(f"🫁 Starting breathing test for {self.led_count} LEDs...")
         start_time = time.time()
         
         while time.time() - start_time < duration:
@@ -239,7 +239,7 @@ def main():
     print("=" * 35)
     
     # Configuration - adjust these for your setup
-    LED_COUNT = 30      # Number of LEDs in your strip
+    LED_COUNT = 60      # Number of LEDs in your strip (change this to match your strip)
     SPI_BUS = 0         # SPI bus number (usually 0)
     SPI_DEVICE = 0      # SPI device number (usually 0)
     BRIGHTNESS = 128    # Brightness (0-255)
@@ -260,10 +260,11 @@ def main():
         print(f"❌ Failed to initialize: {e}")
         print("\nTroubleshooting:")
         print("1. Check your wiring (MOSI to DI, SCLK to CI, GND, external 5V power)")
-        print("2. Verify LED count matches your strip")
+        print("2. Verify LED count matches your strip (change LED_COUNT in script)")
         print("3. Ensure SPI is enabled: sudo raspi-config")
         print("4. Check SPI permissions: sudo usermod -a -G spi pi")
         print("5. Verify SPI interface: ls /dev/spi*")
+        print("6. Try increasing SPI speed or reducing LED count for testing")
     finally:
         if 'led_test' in locals():
             led_test.cleanup()
