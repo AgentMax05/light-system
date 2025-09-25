@@ -17,7 +17,7 @@ except ImportError:
 
 
 class SK9822LEDTest:
-    def __init__(self, led_count=60, spi_bus=0, spi_device=0, brightness=128):
+    def __init__(self, led_count=300, spi_bus=0, spi_device=0, brightness=30):
         """
         Initialize SK9822 LED test
         
