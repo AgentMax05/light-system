@@ -39,7 +39,7 @@ class SK9822LEDTest:
             # Initialize SPI interface
             self.spi = spidev.SpiDev()
             self.spi.open(spi_bus, spi_device)
-            self.spi.max_speed_hz = 1000000  # 1MHz SPI speed for 300 LEDs (more stable)
+            self.spi.max_speed_hz = 2000000  # 2MHz SPI speed for better performance
             self.spi.mode = 0b00  # SPI mode 0
             print("✅ SPI interface initialized successfully")
             
@@ -59,16 +59,9 @@ class SK9822LEDTest:
         for i in range(self.led_count):
             led_data.extend([0xE0, 0x00, 0x00, 0x00])  # Brightness=0, R=0, G=0, B=0
         
-        # Send data in chunks for large LED counts
+        # Send start frame + LED data + end frame
         data = start_frame + led_data + end_frame
-        
-        # For 300 LEDs, send in smaller chunks to ensure all data is transmitted
-        chunk_size = 1024  # Send in 1KB chunks
-        for i in range(0, len(data), chunk_size):
-            chunk = data[i:i + chunk_size]
-            self.spi.xfer2(chunk)
-            time.sleep(0.001)  # Small delay between chunks
-        
+        self.spi.xfer2(data)
         print(f"🔴 All {self.led_count} LEDs cleared")
     
     def solid_color(self, red, green, blue):
@@ -83,16 +76,9 @@ class SK9822LEDTest:
             brightness_byte = 0xE0 | (self.brightness >> 3)  # Top 5 bits for brightness
             led_data.extend([brightness_byte, blue, green, red])
         
-        # Send data in chunks for large LED counts
+        # Send start frame + LED data + end frame
         data = start_frame + led_data + end_frame
-        
-        # For 300 LEDs, send in smaller chunks to ensure all data is transmitted
-        chunk_size = 1024  # Send in 1KB chunks
-        for i in range(0, len(data), chunk_size):
-            chunk = data[i:i + chunk_size]
-            self.spi.xfer2(chunk)
-            time.sleep(0.001)  # Small delay between chunks
-        
+        self.spi.xfer2(data)
         print(f"🎨 Set all {self.led_count} LEDs to RGB({red}, {green}, {blue})")
     
     def rainbow_test(self, duration=5):
@@ -114,15 +100,8 @@ class SK9822LEDTest:
                 led_data.extend([brightness_byte, rgb[2], rgb[1], rgb[0]])  # BGR format
             
             data = start_frame + led_data + end_frame
-            
-            # Send data in chunks for large LED counts
-            chunk_size = 1024  # Send in 1KB chunks
-            for i in range(0, len(data), chunk_size):
-                chunk = data[i:i + chunk_size]
-                self.spi.xfer2(chunk)
-                time.sleep(0.001)  # Small delay between chunks
-            
-            time.sleep(0.1)  # Slower for 300 LEDs
+            self.spi.xfer2(data)
+            time.sleep(0.05)  # 20 FPS
         
         print("✅ Rainbow test completed")
     
@@ -151,16 +130,9 @@ class SK9822LEDTest:
                     led_data.extend([0xE0, 0x00, 0x00, 0x00])  # Off
             
             data = start_frame + led_data + end_frame
-            
-            # Send data in chunks for large LED counts
-            chunk_size = 1024  # Send in 1KB chunks
-            for i in range(0, len(data), chunk_size):
-                chunk = data[i:i + chunk_size]
-                self.spi.xfer2(chunk)
-                time.sleep(0.001)  # Small delay between chunks
-            
+            self.spi.xfer2(data)
             position = (position + 1) % self.led_count
-            time.sleep(0.2)  # Slower for 300 LEDs
+            time.sleep(0.1)
         
         print("✅ Chase test completed")
     
@@ -183,15 +155,8 @@ class SK9822LEDTest:
                 led_data.extend([brightness_byte, 0xFF, 0x00, 0xFF])  # Purple
             
             data = start_frame + led_data + end_frame
-            
-            # Send data in chunks for large LED counts
-            chunk_size = 1024  # Send in 1KB chunks
-            for i in range(0, len(data), chunk_size):
-                chunk = data[i:i + chunk_size]
-                self.spi.xfer2(chunk)
-                time.sleep(0.001)  # Small delay between chunks
-            
-            time.sleep(0.1)  # Slower for 300 LEDs
+            self.spi.xfer2(data)
+            time.sleep(0.05)
         
         print("✅ Breathing test completed")
     
@@ -274,10 +239,10 @@ def main():
     print("=" * 35)
     
     # Configuration - adjust these for your setup
-    LED_COUNT = 300     # Number of LEDs in your strip (change this to match your strip)
+    LED_COUNT = 60      # Number of LEDs in your strip (change this to match your strip)
     SPI_BUS = 0         # SPI bus number (usually 0)
     SPI_DEVICE = 0      # SPI device number (usually 0)
-    BRIGHTNESS = 30     # Brightness (0-255) - lower for 300 LEDs
+    BRIGHTNESS = 128    # Brightness (0-255)
     
     print(f"Configuration:")
     print(f"  LED Count: {LED_COUNT}")
