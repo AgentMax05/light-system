@@ -58,7 +58,7 @@ def rainbow_cycle(delay=0.01, brightness=BRIGHTNESS):
         data = [0x00] * 4 * NUM_LEDS
         for i in range(NUM_LEDS):
             # Calculate the color for each LED
-            idx = (i * 256 // NUM_LEDS) + j
+            idx = ((i+j) * 256 // NUM_LEDS)
             r = int((math.sin(idx * 6.28318 / 256) + 1) * 127.5)
             g = int((math.sin(idx * 6.28318 / 256 + 2) + 1) * 127.5)
             b = int((math.sin(idx * 6.28318 / 256 + 4) + 1) * 127.5)
