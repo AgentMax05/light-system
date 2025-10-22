@@ -71,18 +71,20 @@ class SK9822LEDTest:
         # Create data for all LEDs (off)
         led_data = []
         for i in range(self.led_count):
-            led_data.extend([0xE0, 0x00, 0x00, 0x00])  # Brightness=0, R=0, G=0, B=0
+            led_data.extend([0xE1, 0x00, 0x00, 0x00])  # Brightness=0, R=0, G=0, B=0
         
         # Send start frame + LED data + end frame
         data = start_frame + led_data + end_frame
         
         # Send data in chunks for large LED counts to ensure all data is transmitted
-        chunk_size = 1024  # Send in 1KB chunks
-        for i in range(0, len(data), chunk_size):
-            chunk = data[i:i + chunk_size]
-            self.spi.xfer2(chunk)
-            time.sleep(0.001)  # Small delay between chunks
+        # chunk_size = 1024  # Send in 1KB chunks
+        # for i in range(0, len(data), chunk_size):
+        #     chunk = data[i:i + chunk_size]
+        #     self.spi.xfer2(chunk)
+        #     time.sleep(0.001)  # Small delay between chunks
         
+        self.spi.xfer2(data)
+
         print(f"🔴 All {self.led_count} LEDs cleared")
     
     def solid_color(self, red, green, blue):
@@ -359,23 +361,17 @@ class SK9822LEDTest:
 
 
 def main():
-    """Main program: crawl a single light, then sweep brightness across all LEDs"""
-    print("🔌 SK9822 SPI LED Strip – Crawl + Brightness Sweep")
-    print("=" * 55)
+    """Main program: set all LEDs to constant red at ~30% brightness"""
+    print("🔌 SK9822 SPI LED Strip – Constant Red @ ~30%")
+    print("=" * 50)
     
     # Configuration - adjust these for your setup
     LED_COUNT = 300     # Number of LEDs in your strip (change this to match your strip)
     SPI_BUS = 0         # SPI bus number (usually 0)
     SPI_DEVICE = 0      # SPI device number (usually 0)
-    BRIGHTNESS = 30     # Brightness (0-255) - keep modest for long strips
-    COLOR = (255, 0, 0)               # RGB for crawling pixel (red)
-    STEP_DELAY_S = 0.02               # Delay between steps; raise for slower crawl
-    SWEEP_COLOR = (255, 255, 255)     # Color for brightness sweep (white)
-    SWEEP_CYCLES = 1                  # Number of up+down sweeps
-    SWEEP_MIN_LEVEL = 1               # 1..31 (5-bit header)
-    SWEEP_MAX_LEVEL = 31              # Use lower max for power-limited setups
-    SWEEP_STEP = 1                    # Level increment per frame
-    SWEEP_DELAY_S = 0.02              # Delay between frames
+    # ~30% brightness on SK9822 header ≈ 0.3 * 255 ≈ 77
+    BRIGHTNESS = 77     # Brightness (0-255) mapped to 5-bit header via >> 3
+    COLOR = (255, 0, 0) # Solid red
     
     print("Configuration:")
     print(f"  LED Count: {LED_COUNT}")
@@ -383,28 +379,19 @@ def main():
     print(f"  SPI Device: {SPI_DEVICE}")
     print(f"  Brightness: {BRIGHTNESS}")
     print(f"  Color: RGB{COLOR}")
-    print(f"  Step delay: {STEP_DELAY_S}s")
-    print(f"  Sweep color: RGB{SWEEP_COLOR}")
-    print(f"  Sweep levels: {SWEEP_MIN_LEVEL}..{SWEEP_MAX_LEVEL} step {SWEEP_STEP}")
-    print(f"  Sweep delay: {SWEEP_DELAY_S}s, cycles: {SWEEP_CYCLES}")
     print()
     
-    # Create and run crawl
+    # Initialize and set solid color
     try:
         led = SK9822LEDTest(LED_COUNT, SPI_BUS, SPI_DEVICE, BRIGHTNESS)
-        led.clear_all()
-        led.crawl_once(*COLOR, delay_s=STEP_DELAY_S)
-        led.brightness_sweep(
-            *SWEEP_COLOR,
-            cycles=SWEEP_CYCLES,
-            min_level=SWEEP_MIN_LEVEL,
-            max_level=SWEEP_MAX_LEVEL,
-            step=SWEEP_STEP,
-            delay_s=SWEEP_DELAY_S,
-        )
-        # Optionally, repeat: uncomment next line
-        # for _ in range(3): led.crawl_once(*COLOR, delay_s=STEP_DELAY_S)
+        led.solid_color(*COLOR)
+        print("✅ Set to constant red at ~30% brightness. Press Ctrl+C to exit.")
+        # Keep process alive so LEDs remain steady until user exits
+        while True:
+            time.sleep(1)
         
+    except KeyboardInterrupt:
+        print("\n⏹️  Stopping on user request")
     except Exception as e:
         print(f"❌ Failed to initialize: {e}")
         print("\nTroubleshooting:")
@@ -416,7 +403,7 @@ def main():
         print("6. Try lowering SPI speed or LED_COUNT for testing")
     finally:
         if 'led' in locals():
-            led.clear_all()
+            # Do not clear on exit; keep LEDs showing last latched frame
             led.cleanup()
 
 
