@@ -3,7 +3,7 @@ import time
 
 spi = spidev.SpiDev()
 spi.open(0, 0)
-spi.max_speed_hz = 2_000_000
+spi.max_speed_hz = 1_000_000
 
 NUM_LEDS = 300
 
