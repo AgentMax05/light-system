@@ -21,7 +21,16 @@ def set_all_to_color(r, g, b, brightness):
 
     spi.xfer2(data)
 
-set_all_to_color(255, 0, 0, 1)
+def clear_all_leds():
+    set_all_to_color(0, 0, 0, 0)
+
+for i in range(1, 33):
+    print(f"brightness level {i}")
+    set_all_to_color(255, 0, 0, i)
+    time.sleep(3)
+
+print("clearing all LEDs")
+clear_all_leds()
 
 spi.close()
 
