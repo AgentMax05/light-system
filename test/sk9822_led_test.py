@@ -61,7 +61,14 @@ class SK9822LEDTest:
         
         # Send start frame + LED data + end frame
         data = start_frame + led_data + end_frame
-        self.spi.xfer2(data)
+        
+        # Send data in chunks for large LED counts to ensure all data is transmitted
+        chunk_size = 1024  # Send in 1KB chunks
+        for i in range(0, len(data), chunk_size):
+            chunk = data[i:i + chunk_size]
+            self.spi.xfer2(chunk)
+            time.sleep(0.001)  # Small delay between chunks
+        
         print(f"🔴 All {self.led_count} LEDs cleared")
     
     def solid_color(self, red, green, blue):
@@ -78,7 +85,17 @@ class SK9822LEDTest:
         
         # Send start frame + LED data + end frame
         data = start_frame + led_data + end_frame
-        self.spi.xfer2(data)
+        
+        # Debug: Print data size
+        print(f"📊 Sending {len(data)} bytes for {self.led_count} LEDs")
+        
+        # Send data in chunks for large LED counts to ensure all data is transmitted
+        chunk_size = 1024  # Send in 1KB chunks
+        for i in range(0, len(data), chunk_size):
+            chunk = data[i:i + chunk_size]
+            self.spi.xfer2(chunk)
+            time.sleep(0.001)  # Small delay between chunks
+        
         print(f"🎨 Set all {self.led_count} LEDs to RGB({red}, {green}, {blue})")
     
     def rainbow_test(self, duration=5):
@@ -100,8 +117,15 @@ class SK9822LEDTest:
                 led_data.extend([brightness_byte, rgb[2], rgb[1], rgb[0]])  # BGR format
             
             data = start_frame + led_data + end_frame
-            self.spi.xfer2(data)
-            time.sleep(0.05)  # 20 FPS
+            
+            # Send data in chunks for large LED counts
+            chunk_size = 1024  # Send in 1KB chunks
+            for i in range(0, len(data), chunk_size):
+                chunk = data[i:i + chunk_size]
+                self.spi.xfer2(chunk)
+                time.sleep(0.001)  # Small delay between chunks
+            
+            time.sleep(0.1)  # Slower for 300 LEDs
         
         print("✅ Rainbow test completed")
     
@@ -130,9 +154,16 @@ class SK9822LEDTest:
                     led_data.extend([0xE0, 0x00, 0x00, 0x00])  # Off
             
             data = start_frame + led_data + end_frame
-            self.spi.xfer2(data)
+            
+            # Send data in chunks for large LED counts
+            chunk_size = 1024  # Send in 1KB chunks
+            for i in range(0, len(data), chunk_size):
+                chunk = data[i:i + chunk_size]
+                self.spi.xfer2(chunk)
+                time.sleep(0.001)  # Small delay between chunks
+            
             position = (position + 1) % self.led_count
-            time.sleep(0.1)
+            time.sleep(0.2)  # Slower for 300 LEDs
         
         print("✅ Chase test completed")
     
@@ -155,10 +186,49 @@ class SK9822LEDTest:
                 led_data.extend([brightness_byte, 0xFF, 0x00, 0xFF])  # Purple
             
             data = start_frame + led_data + end_frame
-            self.spi.xfer2(data)
-            time.sleep(0.05)
+            
+            # Send data in chunks for large LED counts
+            chunk_size = 1024  # Send in 1KB chunks
+            for i in range(0, len(data), chunk_size):
+                chunk = data[i:i + chunk_size]
+                self.spi.xfer2(chunk)
+                time.sleep(0.001)  # Small delay between chunks
+            
+            time.sleep(0.1)  # Slower for 300 LEDs
         
         print("✅ Breathing test completed")
+
+    def crawl_once(self, red=255, green=0, blue=0, delay_s=0.02):
+        """Move a single lit pixel from start (index 0) to end and stop."""
+        print(f"➡️  Crawling single pixel across {self.led_count} LEDs...")
+        start_frame = [0x00] * 4
+        end_frame = [0xFF] * 4
+        brightness_byte = 0xE0 | (self.brightness >> 3)
+
+        for position in range(self.led_count):
+            led_data = []
+            for i in range(self.led_count):
+                if i == position:
+                    # Lit pixel at current position (BGR order)
+                    led_data.extend([brightness_byte, blue, green, red])
+                else:
+                    # Off
+                    led_data.extend([0xE0, 0x00, 0x00, 0x00])
+
+            data = start_frame + led_data + end_frame
+
+            # Send in chunks
+            chunk_size = 1024
+            for i in range(0, len(data), chunk_size):
+                chunk = data[i:i + chunk_size]
+                self.spi.xfer2(chunk)
+                # Small delay helps ensure reliable clocking at lower speeds
+                # and avoids hammering the SPI bus too hard.
+                time.sleep(0.0005)
+
+            time.sleep(delay_s)
+
+        print("✅ Crawl complete")
     
     def hsv_to_rgb(self, h, s, v):
         """Convert HSV to RGB"""
@@ -234,27 +304,34 @@ class SK9822LEDTest:
 
 
 def main():
-    """Main test function"""
-    print("🔌 SK9822 SPI LED Strip Test")
-    print("=" * 35)
+    """Main program: crawl a single light from start to end"""
+    print("🔌 SK9822 SPI LED Strip – Single Light Crawl")
+    print("=" * 45)
     
     # Configuration - adjust these for your setup
-    LED_COUNT = 60      # Number of LEDs in your strip (change this to match your strip)
+    LED_COUNT = 300     # Number of LEDs in your strip (change this to match your strip)
     SPI_BUS = 0         # SPI bus number (usually 0)
     SPI_DEVICE = 0      # SPI device number (usually 0)
-    BRIGHTNESS = 128    # Brightness (0-255)
+    BRIGHTNESS = 30     # Brightness (0-255) - keep modest for long strips
+    COLOR = (255, 0, 0) # RGB for crawling pixel (red)
+    STEP_DELAY_S = 0.02 # Delay between steps; raise for slower crawl
     
-    print(f"Configuration:")
+    print("Configuration:")
     print(f"  LED Count: {LED_COUNT}")
     print(f"  SPI Bus: {SPI_BUS}")
     print(f"  SPI Device: {SPI_DEVICE}")
     print(f"  Brightness: {BRIGHTNESS}")
+    print(f"  Color: RGB{COLOR}")
+    print(f"  Step delay: {STEP_DELAY_S}s")
     print()
     
-    # Create and run tests
+    # Create and run crawl
     try:
-        led_test = SK9822LEDTest(LED_COUNT, SPI_BUS, SPI_DEVICE, BRIGHTNESS)
-        led_test.run_all_tests()
+        led = SK9822LEDTest(LED_COUNT, SPI_BUS, SPI_DEVICE, BRIGHTNESS)
+        led.clear_all()
+        led.crawl_once(*COLOR, delay_s=STEP_DELAY_S)
+        # Optionally, repeat: uncomment next line
+        # for _ in range(3): led.crawl_once(*COLOR, delay_s=STEP_DELAY_S)
         
     except Exception as e:
         print(f"❌ Failed to initialize: {e}")
@@ -264,10 +341,11 @@ def main():
         print("3. Ensure SPI is enabled: sudo raspi-config")
         print("4. Check SPI permissions: sudo usermod -a -G spi pi")
         print("5. Verify SPI interface: ls /dev/spi*")
-        print("6. Try increasing SPI speed or reducing LED count for testing")
+        print("6. Try lowering SPI speed or LED_COUNT for testing")
     finally:
-        if 'led_test' in locals():
-            led_test.cleanup()
+        if 'led' in locals():
+            led.clear_all()
+            led.cleanup()
 
 
 if __name__ == "__main__":
