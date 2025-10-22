@@ -65,6 +65,8 @@ def rainbow_cycle(delay=0.01, brightness=BRIGHTNESS):
 
             set_led(i, (r, g, b), brightness, data)
 
+        print(data[-4:])
+
         send_data(data)
         time.sleep(delay)
 
