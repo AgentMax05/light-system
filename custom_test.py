@@ -26,7 +26,7 @@ def set_all_to_color(r, g, b, brightness):
 def clear_all_leds():
     set_all_to_color(0, 0, 0, 1)
 
-set_all_to_color(255, 0, 0, 10)
+set_all_to_color(255, 0, 0, 1)
 input()
 print("clearing all LEDs")
 clear_all_leds()
