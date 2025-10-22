@@ -39,7 +39,7 @@ class SK9822LEDTest:
             # Initialize SPI interface
             self.spi = spidev.SpiDev()
             self.spi.open(spi_bus, spi_device)
-            self.spi.max_speed_hz = 2000000  # 2MHz SPI speed for better performance
+            self.spi.max_speed_hz = 1000000  # 1MHz for better signal integrity on long strips
             self.spi.mode = 0b00  # SPI mode 0
             print("✅ SPI interface initialized successfully")
             
@@ -55,12 +55,15 @@ class SK9822LEDTest:
     def _end_frame(self):
         """Return an appropriate end frame to latch data across the strip.
 
-        Per APA102/SK9822 timing, require at least N/2 clock cycles of 1s
-        (N = number of LEDs). That's ceil(N/16) bytes of 0xFF. Keep a
-        minimum of 4 bytes for compatibility with short strips.
+        Many implementations use (N+15)//16 dummy bytes. Using zeros here has
+        proven more reliable on SK9822 variants.
         """
         bytes_needed = max(4, (self.led_count + 15) // 16)
-        return [0xFF] * bytes_needed
+        return [0x00] * bytes_needed
+
+    def _send_data(self, data: list):
+        """Send a full frame in a single SPI transfer."""
+        self.spi.xfer2(data)
     
     def clear_all(self):
         """Turn off all LEDs"""
@@ -70,20 +73,16 @@ class SK9822LEDTest:
         
         # Create data for all LEDs (off)
         led_data = []
-        for i in range(self.led_count):
-            led_data.extend([0xE1, 0x00, 0x00, 0x00])  # Brightness=0, R=0, G=0, B=0
+        for _ in range(self.led_count):
+            led_data.extend([0xE0, 0x00, 0x00, 0x00])  # Brightness=0, R=0, G=0, B=0
         
         # Send start frame + LED data + end frame
         data = start_frame + led_data + end_frame
         
-        # Send data in chunks for large LED counts to ensure all data is transmitted
-        # chunk_size = 1024  # Send in 1KB chunks
-        # for i in range(0, len(data), chunk_size):
-        #     chunk = data[i:i + chunk_size]
-        #     self.spi.xfer2(chunk)
-        #     time.sleep(0.001)  # Small delay between chunks
-        
-        self.spi.xfer2(data)
+        # Send once; then send a second time to double-latch off state
+        self._send_data(data)
+        time.sleep(0.001)
+        self._send_data(data)
 
         print(f"🔴 All {self.led_count} LEDs cleared")
     
@@ -105,12 +104,8 @@ class SK9822LEDTest:
         # Debug: Print data size
         print(f"📊 Sending {len(data)} bytes for {self.led_count} LEDs")
         
-        # Send data in chunks for large LED counts to ensure all data is transmitted
-        chunk_size = 1024  # Send in 1KB chunks
-        for i in range(0, len(data), chunk_size):
-            chunk = data[i:i + chunk_size]
-            self.spi.xfer2(chunk)
-            time.sleep(0.001)  # Small delay between chunks
+        # Send full frame in one transfer
+        self._send_data(data)
         
         print(f"🎨 Set all {self.led_count} LEDs to RGB({red}, {green}, {blue})")
     
@@ -134,12 +129,8 @@ class SK9822LEDTest:
             
             data = start_frame + led_data + end_frame
             
-            # Send data in chunks for large LED counts
-            chunk_size = 1024  # Send in 1KB chunks
-            for i in range(0, len(data), chunk_size):
-                chunk = data[i:i + chunk_size]
-                self.spi.xfer2(chunk)
-                time.sleep(0.001)  # Small delay between chunks
+            # Send full frame in one transfer
+            self._send_data(data)
             
             time.sleep(0.1)  # Slower for 300 LEDs
         
@@ -171,12 +162,8 @@ class SK9822LEDTest:
             
             data = start_frame + led_data + end_frame
             
-            # Send data in chunks for large LED counts
-            chunk_size = 1024  # Send in 1KB chunks
-            for i in range(0, len(data), chunk_size):
-                chunk = data[i:i + chunk_size]
-                self.spi.xfer2(chunk)
-                time.sleep(0.001)  # Small delay between chunks
+            # Send full frame in one transfer
+            self._send_data(data)
             
             position = (position + 1) % self.led_count
             time.sleep(0.2)  # Slower for 300 LEDs
@@ -203,12 +190,8 @@ class SK9822LEDTest:
             
             data = start_frame + led_data + end_frame
             
-            # Send data in chunks for large LED counts
-            chunk_size = 1024  # Send in 1KB chunks
-            for i in range(0, len(data), chunk_size):
-                chunk = data[i:i + chunk_size]
-                self.spi.xfer2(chunk)
-                time.sleep(0.001)  # Small delay between chunks
+            # Send full frame in one transfer
+            self._send_data(data)
             
             time.sleep(0.1)  # Slower for 300 LEDs
         
@@ -233,14 +216,8 @@ class SK9822LEDTest:
 
             data = start_frame + led_data + end_frame
 
-            # Send in chunks
-            chunk_size = 1024
-            for i in range(0, len(data), chunk_size):
-                chunk = data[i:i + chunk_size]
-                self.spi.xfer2(chunk)
-                # Small delay helps ensure reliable clocking at lower speeds
-                # and avoids hammering the SPI bus too hard.
-                time.sleep(0.0005)
+            # Send full frame in one transfer
+            self._send_data(data)
 
             time.sleep(delay_s)
 
@@ -272,10 +249,7 @@ class SK9822LEDTest:
                 # BGR order for SK9822
                 led_data.extend([brightness_byte, blue, green, red])
             data = start_frame + led_data + end_frame
-            chunk_size = 1024
-            for i in range(0, len(data), chunk_size):
-                chunk = data[i:i + chunk_size]
-                self.spi.xfer2(chunk)
+            self._send_data(data)
             time.sleep(delay_s)
 
         for _ in range(max(1, cycles)):
