@@ -26,7 +26,13 @@ def set_all_to_color(r, g, b, brightness):
 def clear_all_leds():
     set_all_to_color(0, 0, 0, 1)
 
-set_all_to_color(255, 0, 0, 1)
+brightness = 1
+while True and brightness <= 31:
+    set_all_to_color(255, 0, 0, brightness)
+    print(f"brightness: {brightness}")
+    brightness += 1
+    input()
+
 input()
 print("clearing all LEDs")
 clear_all_leds()
