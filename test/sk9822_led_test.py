@@ -309,7 +309,7 @@ def main():
     print("=" * 45)
     
     # Configuration - adjust these for your setup
-    LED_COUNT = 300     # Number of LEDs in your strip (change this to match your strip)
+    LED_COUNT = 298     # Number of LEDs in your strip (change this to match your strip)
     SPI_BUS = 0         # SPI bus number (usually 0)
     SPI_DEVICE = 0      # SPI device number (usually 0)
     BRIGHTNESS = 30     # Brightness (0-255) - keep modest for long strips
