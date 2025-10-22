@@ -230,6 +230,47 @@ class SK9822LEDTest:
 
         print("✅ Crawl complete")
     
+    def brightness_sweep(self, red=255, green=255, blue=255, *, cycles=1,
+                         min_level=1, max_level=31, step=1, delay_s=0.02):
+        """Light all LEDs and sweep SK9822 global brightness up and down.
+
+        Args:
+            red, green, blue: Color to display while sweeping (0-255)
+            cycles: Number of up+down sweeps
+            min_level, max_level: 5-bit SK9822 brightness header levels (1..31)
+            step: Increment step for brightness level
+            delay_s: Delay between frames in seconds
+        Notes:
+            - SK9822 brightness header is 5-bit (0..31). We program it directly via 0xE0 | level.
+            - Color bytes are still sent at full intensity; only header level changes perceived brightness.
+        """
+        print(f"🔆 Brightness sweep on {self.led_count} LEDs (levels {min_level}..{max_level})")
+        start_frame = [0x00] * 4
+        end_frame = [0xFF] * 4
+
+        def send_frame(level: int):
+            level = max(0, min(31, level))
+            brightness_byte = 0xE0 | level
+            led_data = []
+            for _ in range(self.led_count):
+                # BGR order for SK9822
+                led_data.extend([brightness_byte, blue, green, red])
+            data = start_frame + led_data + end_frame
+            chunk_size = 1024
+            for i in range(0, len(data), chunk_size):
+                chunk = data[i:i + chunk_size]
+                self.spi.xfer2(chunk)
+            time.sleep(delay_s)
+
+        for _ in range(max(1, cycles)):
+            # Up
+            for lvl in range(min_level, max_level + 1, max(1, step)):
+                send_frame(lvl)
+            # Down
+            for lvl in range(max_level, min_level - 1, -max(1, step)):
+                send_frame(lvl)
+        print("✅ Brightness sweep complete")
+    
     def hsv_to_rgb(self, h, s, v):
         """Convert HSV to RGB"""
         h = h % 360
@@ -304,17 +345,23 @@ class SK9822LEDTest:
 
 
 def main():
-    """Main program: crawl a single light from start to end"""
-    print("🔌 SK9822 SPI LED Strip – Single Light Crawl")
-    print("=" * 45)
+    """Main program: crawl a single light, then sweep brightness across all LEDs"""
+    print("🔌 SK9822 SPI LED Strip – Crawl + Brightness Sweep")
+    print("=" * 55)
     
     # Configuration - adjust these for your setup
     LED_COUNT = 300     # Number of LEDs in your strip (change this to match your strip)
     SPI_BUS = 0         # SPI bus number (usually 0)
     SPI_DEVICE = 0      # SPI device number (usually 0)
     BRIGHTNESS = 30     # Brightness (0-255) - keep modest for long strips
-    COLOR = (255, 0, 0) # RGB for crawling pixel (red)
-    STEP_DELAY_S = 0.02 # Delay between steps; raise for slower crawl
+    COLOR = (255, 0, 0)               # RGB for crawling pixel (red)
+    STEP_DELAY_S = 0.02               # Delay between steps; raise for slower crawl
+    SWEEP_COLOR = (255, 255, 255)     # Color for brightness sweep (white)
+    SWEEP_CYCLES = 1                  # Number of up+down sweeps
+    SWEEP_MIN_LEVEL = 1               # 1..31 (5-bit header)
+    SWEEP_MAX_LEVEL = 31              # Use lower max for power-limited setups
+    SWEEP_STEP = 1                    # Level increment per frame
+    SWEEP_DELAY_S = 0.02              # Delay between frames
     
     print("Configuration:")
     print(f"  LED Count: {LED_COUNT}")
@@ -323,6 +370,9 @@ def main():
     print(f"  Brightness: {BRIGHTNESS}")
     print(f"  Color: RGB{COLOR}")
     print(f"  Step delay: {STEP_DELAY_S}s")
+    print(f"  Sweep color: RGB{SWEEP_COLOR}")
+    print(f"  Sweep levels: {SWEEP_MIN_LEVEL}..{SWEEP_MAX_LEVEL} step {SWEEP_STEP}")
+    print(f"  Sweep delay: {SWEEP_DELAY_S}s, cycles: {SWEEP_CYCLES}")
     print()
     
     # Create and run crawl
@@ -330,6 +380,14 @@ def main():
         led = SK9822LEDTest(LED_COUNT, SPI_BUS, SPI_DEVICE, BRIGHTNESS)
         led.clear_all()
         led.crawl_once(*COLOR, delay_s=STEP_DELAY_S)
+        led.brightness_sweep(
+            *SWEEP_COLOR,
+            cycles=SWEEP_CYCLES,
+            min_level=SWEEP_MIN_LEVEL,
+            max_level=SWEEP_MAX_LEVEL,
+            step=SWEEP_STEP,
+            delay_s=SWEEP_DELAY_S,
+        )
         # Optionally, repeat: uncomment next line
         # for _ in range(3): led.crawl_once(*COLOR, delay_s=STEP_DELAY_S)
         
