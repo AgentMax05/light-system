@@ -404,6 +404,7 @@ def main():
     finally:
         if 'led' in locals():
             # Do not clear on exit; keep LEDs showing last latched frame
+            led.clear_all()
             led.cleanup()
 
 
