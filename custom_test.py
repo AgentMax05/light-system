@@ -82,14 +82,15 @@ def button_callback():
     clear_all_leds()
 
 # Attach the callback to the button press
-button.when_pressed = button_callback
+# button.when_pressed = button_callback
 
-try:
-    while True:
-        time.sleep(1)  # Keep the program running
-except KeyboardInterrupt:
-    pass
+# try:
+#     while True:
+#         time.sleep(1)  # Keep the program running
+# except KeyboardInterrupt:
+#     pass
 
+rainbow_cycle(delay=0.01, brightness=BRIGHTNESS)
 
 input()
 clear_all_leds()
