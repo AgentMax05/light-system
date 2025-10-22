@@ -8,7 +8,7 @@ spi.open(0, 0)
 spi.max_speed_hz = 1_000_000
 spi.mode = 0 
 spi.lsbfirst = False 
-spi.no_cs = True 
+# spi.no_cs = True 
 
 NUM_LEDS = 300
 BRIGHTNESS = 1
