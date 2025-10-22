@@ -7,7 +7,7 @@ spi.open(0, 0)
 spi.max_speed_hz = 1_000_000
 
 NUM_LEDS = 300
-BRIGHTNESS = 2
+BRIGHTNESS = 1
 
 def set_all_to_color(r, g, b, brightness):
     data = []
@@ -25,7 +25,18 @@ def set_all_to_color(r, g, b, brightness):
 
     spi.xfer2(data)
 
+def send_data(led_data):
+    data = []
+    data += [0x00, 0x00, 0x00, 0x00]
+    data += led_data
+    data += [0xFF] * ((NUM_LEDS + 15) // 16)
+    spi.xfer2(data)
+
+def set_led(index, color, brightness, dataframe):
+    dataframe[index*4:index*4+4] = [0xE0 | brightness, color[2], color[1], color[0]]
+
 def crawl_led(color=(255, 0, 0), delay=0.05, brightness=BRIGHTNESS):
+    led_data = [(0, 0, 0)] * NUM_LEDS
     for i in range(NUM_LEDS):
         led_data = [(0, 0, 0)] * NUM_LEDS
         led_data[i] = color
@@ -43,16 +54,21 @@ def clear_all_leds():
 
 def rainbow_cycle(delay=0.01, brightness=BRIGHTNESS):
     for j in range(256):  # 256 cycles of all colors on the wheel
+        print(j)
+        data = [0x00] * 4 * NUM_LEDS
         for i in range(NUM_LEDS):
             # Calculate the color for each LED
             idx = (i * 256 // NUM_LEDS) + j
             r = int((math.sin(idx * 6.28318 / 256) + 1) * 127.5)
             g = int((math.sin(idx * 6.28318 / 256 + 2) + 1) * 127.5)
             b = int((math.sin(idx * 6.28318 / 256 + 4) + 1) * 127.5)
-            set_all_to_color(r, g, b, brightness)
-            time.sleep(delay)
 
-rainbow_cycle(0.05)
+            set_led(i, (r, g, b), brightness, data)
+
+        send_data(data)
+        time.sleep(delay)
+
+rainbow_cycle(0.1)
 
 input()
 
