@@ -47,12 +47,26 @@ class SK9822LEDTest:
             print(f"❌ Failed to initialize SPI: {e}")
             print("Check your SPI settings and permissions")
             exit(1)
+
+    def _start_frame(self):
+        """Return the SK9822/APA102 start frame (32 zero bits)."""
+        return [0x00] * 4
+
+    def _end_frame(self):
+        """Return an appropriate end frame to latch data across the strip.
+
+        Per APA102/SK9822 timing, require at least N/2 clock cycles of 1s
+        (N = number of LEDs). That's ceil(N/16) bytes of 0xFF. Keep a
+        minimum of 4 bytes for compatibility with short strips.
+        """
+        bytes_needed = max(4, (self.led_count + 15) // 16)
+        return [0xFF] * bytes_needed
     
     def clear_all(self):
         """Turn off all LEDs"""
-        # SK9822 requires start frame (32 zeros) and end frame (32 ones)
-        start_frame = [0x00] * 4  # 32 bits of zeros
-        end_frame = [0xFF] * 4    # 32 bits of ones
+        # SK9822 requires start frame and a sufficiently long end frame
+        start_frame = self._start_frame()
+        end_frame = self._end_frame()
         
         # Create data for all LEDs (off)
         led_data = []
@@ -73,8 +87,8 @@ class SK9822LEDTest:
     
     def solid_color(self, red, green, blue):
         """Set all LEDs to the same color"""
-        start_frame = [0x00] * 4  # 32 bits of zeros
-        end_frame = [0xFF] * 4    # 32 bits of ones
+        start_frame = self._start_frame()
+        end_frame = self._end_frame()
         
         # Create data for all LEDs
         led_data = []
@@ -104,8 +118,8 @@ class SK9822LEDTest:
         start_time = time.time()
         
         while time.time() - start_time < duration:
-            start_frame = [0x00] * 4
-            end_frame = [0xFF] * 4
+            start_frame = self._start_frame()
+            end_frame = self._end_frame()
             
             led_data = []
             for i in range(self.led_count):
@@ -136,8 +150,8 @@ class SK9822LEDTest:
         position = 0
         
         while time.time() - start_time < duration:
-            start_frame = [0x00] * 4
-            end_frame = [0xFF] * 4
+            start_frame = self._start_frame()
+            end_frame = self._end_frame()
             
             led_data = []
             for i in range(self.led_count):
@@ -177,8 +191,8 @@ class SK9822LEDTest:
             intensity = (math.sin(time.time() * 2) + 1) / 2  # 0 to 1
             current_brightness = int(self.brightness * intensity)
             
-            start_frame = [0x00] * 4
-            end_frame = [0xFF] * 4
+            start_frame = self._start_frame()
+            end_frame = self._end_frame()
             
             led_data = []
             for i in range(self.led_count):
@@ -201,8 +215,8 @@ class SK9822LEDTest:
     def crawl_once(self, red=255, green=0, blue=0, delay_s=0.02):
         """Move a single lit pixel from start (index 0) to end and stop."""
         print(f"➡️  Crawling single pixel across {self.led_count} LEDs...")
-        start_frame = [0x00] * 4
-        end_frame = [0xFF] * 4
+        start_frame = self._start_frame()
+        end_frame = self._end_frame()
         brightness_byte = 0xE0 | (self.brightness >> 3)
 
         for position in range(self.led_count):
@@ -245,8 +259,8 @@ class SK9822LEDTest:
             - Color bytes are still sent at full intensity; only header level changes perceived brightness.
         """
         print(f"🔆 Brightness sweep on {self.led_count} LEDs (levels {min_level}..{max_level})")
-        start_frame = [0x00] * 4
-        end_frame = [0xFF] * 4
+        start_frame = self._start_frame()
+        end_frame = self._end_frame()
 
         def send_frame(level: int):
             level = max(0, min(31, level))
