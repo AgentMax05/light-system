@@ -90,7 +90,7 @@ def button_callback():
 # except KeyboardInterrupt:
 #     pass
 
-rainbow_cycle(delay=0.01, brightness=BRIGHTNESS)
+rainbow_cycle(delay=0.05, brightness=BRIGHTNESS)
 # set_all_to_color(0, 0, 255, BRIGHTNESS)
 
 input()
