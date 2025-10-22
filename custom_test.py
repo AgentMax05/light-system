@@ -77,8 +77,8 @@ button = Button(BUTTON_PIN)
 def button_callback():
     print("microphone activated")
     # Reactive effect: flash white for a short duration
-    set_all_to_color(255, 255, 255, BRIGHTNESS)
-    time.sleep(0.5)
+    set_all_to_color(255, 0, 0, BRIGHTNESS)
+    time.sleep(0.02)
     clear_all_leds()
 
 # Attach the callback to the button press
