@@ -90,8 +90,10 @@ def button_callback():
 # except KeyboardInterrupt:
 #     pass
 
-rainbow_cycle(delay=0.2, brightness=BRIGHTNESS)
+# rainbow_cycle(delay=0.2, brightness=BRIGHTNESS)
 # set_all_to_color(0, 0, 255, BRIGHTNESS)
+
+crawl_led(color=(0, 255, 0), delay=0.02, brightness=BRIGHTNESS)
 
 input()
 clear_all_leds()
