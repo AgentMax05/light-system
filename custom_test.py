@@ -95,7 +95,7 @@ def button_callback():
     clear_all_leds()
 
 # Attach the callback to the button press
-# button.when_pressed = button_callback
+button.when_pressed = button_callback
 
 try:
     while True:
