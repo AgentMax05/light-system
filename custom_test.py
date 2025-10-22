@@ -6,6 +6,7 @@ spi.open(0, 0)
 spi.max_speed_hz = 1_000_000
 
 NUM_LEDS = 300
+BRIGHTNESS = 2
 
 def set_all_to_color(r, g, b, brightness):
     data = []
@@ -26,15 +27,23 @@ def set_all_to_color(r, g, b, brightness):
 def clear_all_leds():
     set_all_to_color(0, 0, 0, 1)
 
-brightness = 1
-while True and brightness <= 31:
-    set_all_to_color(255, 0, 0, brightness)
-    print(f"brightness: {brightness}")
-    brightness += 1
-    input()
+def crawl_led(color=(255, 0, 0), delay=0.05, brightness=BRIGHTNESS):
+    for i in range(NUM_LEDS):
+        led_data = [(0, 0, 0)] * NUM_LEDS
+        led_data[i] = color
+        # Build SPI frame
+        data = [0x00, 0x00, 0x00, 0x00]
+        for r, g, b in led_data:
+            data += [0xE0 | brightness, b, g, r]
+        data += [0xFF] * ((NUM_LEDS + 15) // 16)
+        spi.xfer2(data)
+        time.sleep(delay)
+
+
+crawl_led()
 
 input()
-print("clearing all LEDs")
+
 clear_all_leds()
 
 spi.close()
