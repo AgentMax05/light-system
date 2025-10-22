@@ -53,7 +53,7 @@ def clear_all_leds():
 
 
 def rainbow_cycle(delay=0.01, brightness=BRIGHTNESS):
-    for j in range(256):  # 256 cycles of all colors on the wheel
+    for j in range(0, 256 * 10, 10):  # 256 cycles of all colors on the wheel
         print(j)
         data = [0x00] * 4 * NUM_LEDS
         for i in range(NUM_LEDS):
