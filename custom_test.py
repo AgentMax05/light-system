@@ -1,5 +1,6 @@
 import spidev
 import time
+import math
 
 spi = spidev.SpiDev()
 spi.open(0, 0)
@@ -24,9 +25,6 @@ def set_all_to_color(r, g, b, brightness):
 
     spi.xfer2(data)
 
-def clear_all_leds():
-    set_all_to_color(0, 0, 0, 1)
-
 def crawl_led(color=(255, 0, 0), delay=0.05, brightness=BRIGHTNESS):
     for i in range(NUM_LEDS):
         led_data = [(0, 0, 0)] * NUM_LEDS
@@ -39,8 +37,22 @@ def crawl_led(color=(255, 0, 0), delay=0.05, brightness=BRIGHTNESS):
         spi.xfer2(data)
         time.sleep(delay)
 
+def clear_all_leds():
+    set_all_to_color(0, 0, 0, 1)
 
-crawl_led()
+
+def rainbow_cycle(delay=0.01, brightness=BRIGHTNESS):
+    for j in range(256):  # 256 cycles of all colors on the wheel
+        for i in range(NUM_LEDS):
+            # Calculate the color for each LED
+            idx = (i * 256 // NUM_LEDS) + j
+            r = int((math.sin(idx * 6.28318 / 256) + 1) * 127.5)
+            g = int((math.sin(idx * 6.28318 / 256 + 2) + 1) * 127.5)
+            b = int((math.sin(idx * 6.28318 / 256 + 4) + 1) * 127.5)
+            set_all_to_color(r, g, b, brightness)
+            time.sleep(delay)
+
+rainbow_cycle(0.05)
 
 input()
 
