@@ -5,8 +5,8 @@ from gpiozero import Button
 
 spi = spidev.SpiDev()
 spi.open(0, 0)
-spi.max_speed_hz = 4_000_000
-# spi.max_speed_hz = 1_000_000
+# spi.max_speed_hz = 4_000_000
+spi.max_speed_hz = 1_000_000
 # spi.max_speed_hz = 500_000
 # spi.max_speed_hz = 100_000
 spi.mode = 0 
@@ -97,16 +97,16 @@ def button_callback():
 # Attach the callback to the button press
 # button.when_pressed = button_callback
 
-# try:
-#     while True:
-#         time.sleep(1)  # Keep the program running
-# except KeyboardInterrupt:
-#     pass
+try:
+    while True:
+        time.sleep(1)  # Keep the program running
+except KeyboardInterrupt:
+    pass
 
 # rainbow_cycle(delay=0.2, brightness=BRIGHTNESS)
 # set_all_to_color(0, 0, 255, BRIGHTNESS)
 
-crawl_led(color=(0, 255, 0), delay=0.05, brightness=BRIGHTNESS)
+# crawl_led(color=(0, 255, 0), delay=0.05, brightness=BRIGHTNESS)
 
 input()
 clear_all_leds()
