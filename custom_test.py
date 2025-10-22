@@ -16,8 +16,9 @@ def set_all_to_color(r, g, b, brightness):
         data += [0xE0 | brightness, b, g, r]
 
     # End frame
-    data += [0xFF]
-    data += [0x00] * int(5 + NUM_LEDS / 165 + NUM_LEDS / 5)
+    # data += [0xFF]
+    # data += [0x00] * int(5 + NUM_LEDS / 165 + NUM_LEDS / 5)
+    data += [0xFF, 0xFF, 0xFF, 0xFF]
 
     spi.xfer2(data)
 
