@@ -16,7 +16,7 @@ BRIGHTNESS = 1
 def set_all_to_color(r, g, b, brightness):
     data = []
     # Start frame
-    data += [0x00, 0x00, 0x00, 0x00]
+    # data += [0x00, 0x00, 0x00, 0x00]
     # Per LED frame 
     for _ in range(NUM_LEDS):
         data += [0xE0 | brightness, b, g, r]
@@ -25,32 +25,39 @@ def set_all_to_color(r, g, b, brightness):
     # data += [0xFF]
     # data += [0x00] * int(5 + NUM_LEDS / 165 + NUM_LEDS / 5)
     # data += [0xFF, 0xFF, 0xFF, 0xFF]
-    data += [0xFF] * ((NUM_LEDS + 15) // 16)
+    # data += [0xFF] * max(4, (NUM_LEDS + 15) // 16) + [0x00, 0x00, 0x00, 0x00]
 
-    spi.xfer2(data)
+    send_data(data)
+
+    # spi.xfer2(data)
 
 def send_data(led_data):
     data = []
     data += [0x00, 0x00, 0x00, 0x00]
     data += led_data
-    data += [0xFF] * ((NUM_LEDS + 15) // 16)
+    data += [0xFF] * max(4, (NUM_LEDS + 15) // 16) + [0x00, 0x00, 0x00, 0x00]
     spi.xfer2(data)
 
 def set_led(index, color, brightness, dataframe):
     dataframe[index*4:index*4+4] = [0xE0 | brightness, color[2], color[1], color[0]]
 
 def crawl_led(color=(255, 0, 0), delay=0.05, brightness=BRIGHTNESS):
-    led_data = [(0, 0, 0)] * NUM_LEDS
     for i in range(NUM_LEDS):
-        led_data = [(0, 0, 0)] * NUM_LEDS
-        led_data[i] = color
-        # Build SPI frame
-        data = [0x00, 0x00, 0x00, 0x00]
-        for r, g, b in led_data:
-            data += [0xE0 | brightness, b, g, r]
-        data += [0xFF] * ((NUM_LEDS + 15) // 16)
-        spi.xfer2(data)
+        data = [0xE0 | brightness, 0x00, 0x00, 0x00] * NUM_LEDS 
+        set_led(i, color, brightness, data) 
+        send_data(data) 
         time.sleep(delay)
+    
+    # for i in range(NUM_LEDS):
+    #     led_data = [(0, 0, 0)] * NUM_LEDS
+    #     led_data[i] = color
+    #     # Build SPI frame
+    #     data = [0x00, 0x00, 0x00, 0x00]
+    #     for r, g, b in led_data:
+    #         data += [0xE0 | brightness, b, g, r]
+    #     data += [0xFF] * ((NUM_LEDS + 15) // 16)
+    #     spi.xfer2(data)
+    #     time.sleep(delay)
 
 def clear_all_leds():
     set_all_to_color(0, 0, 0, 1)
