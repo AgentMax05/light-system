@@ -55,7 +55,7 @@ if DEVICE == 'pi-sk9822':
     SPI_SPEED_HZ = 1000000
     """SPI clock speed in Hz (1MHz default, can go up to 4MHz for SK9822)"""
     # SK9822_BRIGHTNESS = 1
-    SK9822_BRIGHTNESS = 10
+    SK9822_BRIGHTNESS = 2
     """Global brightness for SK9822 LEDs (0-31, where 31 is maximum)"""
     SOFTWARE_GAMMA_CORRECTION = True
     """Set to True for software gamma correction"""
