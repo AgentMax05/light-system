@@ -7,11 +7,31 @@ import config
 def start_stream(callback):
     p = pyaudio.PyAudio()
     frames_per_buffer = int(config.MIC_RATE / config.FPS)
-    stream = p.open(format=pyaudio.paInt16,
-                    channels=1,
-                    rate=config.MIC_RATE,
-                    input=True,
-                    frames_per_buffer=frames_per_buffer)
+    
+    # Try to open audio stream with error handling for sample rate
+    stream = None
+    sample_rates_to_try = [config.MIC_RATE, 48000, 44100, 16000]
+    
+    for rate in sample_rates_to_try:
+        try:
+            print(f"Trying to open audio stream at {rate} Hz...")
+            stream = p.open(format=pyaudio.paInt16,
+                          channels=1,
+                          rate=rate,
+                          input=True,
+                          frames_per_buffer=int(rate / config.FPS))
+            config.MIC_RATE = rate  # Update config with working rate
+            frames_per_buffer = int(rate / config.FPS)
+            print(f"✓ Audio stream opened successfully at {rate} Hz")
+            break
+        except (OSError, IOError) as e:
+            print(f"✗ Failed at {rate} Hz: {e}")
+            continue
+    
+    if stream is None:
+        p.terminate()
+        raise RuntimeError("Could not open audio stream at any sample rate. Check your microphone connection.")
+    
     overflows = 0
     prev_ovf_time = time.time()
     while True:
