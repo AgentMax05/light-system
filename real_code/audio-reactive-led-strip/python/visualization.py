@@ -323,11 +323,105 @@ def visualize_wavepulse(y):
     output = np.clip(output, 0, 255)
     return output
 
+from collections import deque
+_bass_env_filt = dsp.ExpFilter(np.array([0.1]), alpha_decay=0.2, alpha_rise=0.9)
+_level_filt   = dsp.ExpFilter(np.array([0.5]), alpha_decay=0.2, alpha_rise=0.8)
+_peak_hist    = deque(maxlen=30)  # ~0.5s at 60 FPS; for robust gain
+
+def visualize_party(y):
+    """
+    LED visualizer tuned for party/rap:
+      - Strong bass/kick-driven red
+      - Snappy transients in green
+      - Stable body/air in blue
+      - Robust gain (percentile) to avoid post-loudness dimming
+      - Mirror + slight scroll for motion
+    """
+    global _prev_spectrum, prev_scroll, _peak_hist
+
+    # --- Resize y to half-strip (we'll mirror later) ---
+    half = config.N_PIXELS // 2
+    y = np.copy(interpolate(y, half))
+    y = np.maximum(y, 0)  # no negatives
+
+    # --- Robust level estimate (prevents "dim after loud" hangover) ---
+    # Use rolling 95th percentile as a divisor, smoothed.
+    _peak_hist.append(float(np.max(y)))
+    level_est = np.percentile(_peak_hist, 95) if _peak_hist else np.max(y)
+    lvl = float(_level_filt.update(np.array([level_est]))[0])
+    denom = np.clip(lvl, 0.15, 3.0)
+    y = y / denom
+
+    # --- Common-mode subtraction (above-baseline emphasis) ---
+    common_mode.update(y)
+    y_above = np.clip(y - 0.7 * common_mode.value, 0, None)  # 0.7 keeps it lively
+
+    # --- Frame-to-frame change for transients ---
+    if _prev_spectrum is None or len(_prev_spectrum) != len(y):
+        _prev_spectrum = np.copy(y)
+    diff = y - _prev_spectrum
+    _prev_spectrum = np.copy(y)
+    transients = np.abs(diff)
+
+    # --- Band selections (indices over half-strip) ---
+    n = len(y)
+    bass_hi = max(2, int(0.18 * n))        # ~lowest 18% → kick/bass
+    hat_lo  = int(0.65 * n)                # ~top 35% → hats/air
+
+    bass_band = y_above[:bass_hi]
+    hats_band = y[hat_lo:]
+
+    # Beat pulse from bass envelope (kick accent)
+    bass_level = float(bass_band.mean()) if bass_band.size else 0.0
+    env = float(_bass_env_filt.update(np.array([bass_level]))[0])
+    beat_pulse = np.clip((bass_level - env) * 4.0, 0.0, 1.0)  # scale = sensitivity
+    pulse_gain = 1.0 + 1.2 * beat_pulse                        # global brightness pop
+
+    # --- Color channels ---
+    # Red: above-baseline energy (bass forward) + tiny transient mix
+    r_raw = 1.6 * y_above + 0.2 * transients
+    r = r_filt.update(r_raw)
+
+    # Green: transients (hats/ticks/claps) with a little extra boost
+    g_raw = 2.2 * transients
+    g = g_filt.update(g_raw)
+
+    # Blue: stable body/air; lightly smooth and downweight mids to favor top
+    smooth_y = 0.7 * y + 0.3 * np.roll(y, 1)
+    # add a small emphasis to hats region
+    if hats_band.size:
+        smooth_y[hat_lo:] *= 1.2
+    b = b_filt.update(smooth_y)
+
+    # --- Channel balancing & gamma ---
+    r *= 1.25
+    g *= 1.40
+    b *= 0.85
+
+    # global pulse from kick
+    rgb = np.vstack([r, g, b]) * pulse_gain
+
+    # clip and optional gamma for pleasing roll-off
+    rgb = np.clip(rgb, 0, 1)
+    gamma = 2.0
+    rgb = rgb ** (1.0 / gamma)
+
+    # --- Mirror for symmetry and gentle scroll ---
+    r_m = np.concatenate((rgb[0, ::-1], rgb[0]))
+    g_m = np.concatenate((rgb[1, ::-1], rgb[1]))
+    b_m = np.concatenate((rgb[2, ::-1], rgb[2]))
+
+    prev_scroll = (prev_scroll + 1) % config.N_PIXELS  # 1 px/frame; tune for speed
+    output = np.array([r_m, g_m, b_m]) * 255.0
+    return np.roll(output, shift=prev_scroll, axis=1)
+
+
 # To use, set:
 # visualization_effect = visualize_wavepulse
 """Visualization effect to display on the LED strip"""
 
-visualization_effect = visualize_wavepulse
+visualization_effect = visualize_party
+# visualization_effect = visualize_wavepulse
 # visualization_effect = visualize_spectrum
 # visualization_effect = visualize_scroll
 # visualization_effect = visualize_energy
