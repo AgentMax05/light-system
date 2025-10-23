@@ -2,6 +2,7 @@ import spidev
 import time
 import math
 from gpiozero import Button
+import microphone
 
 spi = spidev.SpiDev()
 spi.open(0, 0)
@@ -83,25 +84,27 @@ def rainbow_cycle(delay=0.01, brightness=BRIGHTNESS):
         time.sleep(delay)
 
 
-# Setup GPIO
-BUTTON_PIN = 3
-button = Button(BUTTON_PIN)
+# # Setup GPIO
+# BUTTON_PIN = 3
+# button = Button(BUTTON_PIN)
 
-def button_callback():
-    print("microphone activated")
-    # Reactive effect: flash white for a short duration
-    set_all_to_color(255, 0, 0, BRIGHTNESS)
-    time.sleep(0.02)
-    clear_all_leds()
+# def button_callback():
+#     print("microphone activated")
+#     # Reactive effect: flash white for a short duration
+#     set_all_to_color(255, 0, 0, BRIGHTNESS)
+#     time.sleep(0.02)
+#     clear_all_leds()
 
 # Attach the callback to the button press
-button.when_pressed = button_callback
+# button.when_pressed = button_callback
 
-try:
-    while True:
-        time.sleep(1)  # Keep the program running
-except KeyboardInterrupt:
-    pass
+# try:
+#     while True:
+#         time.sleep(1)  # Keep the program running
+# except KeyboardInterrupt:
+#     pass
+
+
 
 # rainbow_cycle(delay=0.2, brightness=BRIGHTNESS)
 # set_all_to_color(0, 0, 255, BRIGHTNESS)

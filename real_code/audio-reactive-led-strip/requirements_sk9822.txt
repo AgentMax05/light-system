@@ -1,0 +1,16 @@
+# Python dependencies for audio-reactive LED strip with SK9822 support
+# Install with: pip3 install -r requirements_sk9822.txt
+
+# Core dependencies
+numpy>=1.19.0
+scipy>=1.5.0
+
+# Audio capture
+pyaudio>=0.2.11
+
+# SPI communication for SK9822 LEDs (Raspberry Pi only)
+spidev>=3.5
+
+# Optional: GUI visualization (not recommended on Raspberry Pi due to performance)
+# Uncomment the line below if you want GUI support
+# pyqtgraph>=0.11.0
