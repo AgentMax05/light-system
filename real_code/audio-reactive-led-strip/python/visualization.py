@@ -361,7 +361,7 @@ def visualize_party(y):
         _prev_spectrum = np.copy(y)
     diff = y - _prev_spectrum
     _prev_spectrum = np.copy(y)
-    transients = np.abs(diff)
+    transients = np.abs(diff) * 0.2
 
     # --- Band selections (indices over half-strip) ---
     n = len(y)
