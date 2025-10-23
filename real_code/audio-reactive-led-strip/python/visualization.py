@@ -248,10 +248,48 @@ samples_per_frame = int(config.MIC_RATE / config.FPS)
 # Array containing the rolling audio sample window
 y_roll = np.random.rand(config.N_ROLLING_HISTORY, samples_per_frame) / 1e16
 
-visualization_effect = visualize_spectrum
+"""Visualization effect to display on the LED strip"""
+
+# --- New Wave Pulse Visualizer ---
+def visualize_wavepulse(y):
+    """
+    Creates a symmetric, colorful wave pulse effect that radiates from the center
+    and fades out, with color gradients based on frequency content.
+    """
+    global p
+    # Normalize and scale input
+    y = np.copy(y)
+    gain.update(y)
+    y /= gain.value
+    y = np.clip(y, 0, 1)
+    # Create a color gradient (red to blue)
+    gradient = np.linspace(0, 1, config.N_PIXELS // 2)
+    r = (y * (1 - gradient)) * 255
+    g = (y * gradient) * 255
+    b = (np.abs(np.sin(gradient * np.pi + np.sum(y))) * y) * 255
+    # Pulse effect: fade previous frame, add new pulse at center
+    p *= 0.85  # Fade tails
+    center = config.N_PIXELS // 4
+    p[0, center:center+len(r)] += r
+    p[1, center:center+len(g)] += g
+    p[2, center:center+len(b)] += b
+    # Smooth with Gaussian blur
+    p[0, :] = gaussian_filter1d(p[0, :], sigma=2.0)
+    p[1, :] = gaussian_filter1d(p[1, :], sigma=2.0)
+    p[2, :] = gaussian_filter1d(p[2, :], sigma=2.0)
+    # Mirror for symmetry
+    output = np.concatenate((p[:, ::-1], p), axis=1)
+    output = np.clip(output, 0, 255)
+    return output
+
+# To use, set:
+# visualization_effect = visualize_wavepulse
+"""Visualization effect to display on the LED strip"""
+
+visualization_effect = visualize_wavepulse
+# visualization_effect = visualize_spectrum
 # visualization_effect = visualize_scroll
 # visualization_effect = visualize_energy
-"""Visualization effect to display on the LED strip"""
 
 
 if __name__ == '__main__':
