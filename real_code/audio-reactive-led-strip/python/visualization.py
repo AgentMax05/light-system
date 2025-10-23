@@ -269,12 +269,12 @@ def visualize_wavepulse(y):
     r = (y_interp * (1 - gradient)) * 255
     g = (y_interp * gradient) * 255
     b = (np.abs(np.sin(gradient * np.pi + np.sum(y_interp))) * y_interp) * 255
-    # Pulse effect: fade previous frame, add new pulse at center
+    # Pulse effect: fade previous frame, add new pulse to left half
     p *= 0.85  # Fade tails
-    center = config.N_PIXELS // 4
-    p[0, center:center+len(r)] += r
-    p[1, center:center+len(g)] += g
-    p[2, center:center+len(b)] += b
+    half_leds = config.N_PIXELS // 2
+    p[0, :half_leds] += r
+    p[1, :half_leds] += g
+    p[2, :half_leds] += b
     # Smooth with Gaussian blur
     p[0, :] = gaussian_filter1d(p[0, :], sigma=2.0)
     p[1, :] = gaussian_filter1d(p[1, :], sigma=2.0)
