@@ -412,9 +412,9 @@ def visualize_party(y):
 # visualization_effect = visualize_wavepulse
 """Visualization effect to display on the LED strip"""
 
-visualization_effect = visualize_party
+# visualization_effect = visualize_party
 # visualization_effect = visualize_wavepulse
-# visualization_effect = visualize_spectrum
+visualization_effect = visualize_spectrum
 # visualization_effect = visualize_scroll
 # visualization_effect = visualize_energy
 
