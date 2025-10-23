@@ -210,8 +210,7 @@ def visualize_spectrum(y):
     output = np.array([r, g,b]) * 255
     prev_scroll = (prev_scroll + 1) % config.N_PIXELS
 
-    # return np.roll(output, axis=1, shift=prev_scroll)
-    return np.roll(output, axis=1, shift=0)
+    return np.roll(output, axis=1, shift=prev_scroll)
 
 
 fft_plot_filter = dsp.ExpFilter(np.tile(1e-1, config.N_FFT_BINS),
