@@ -88,8 +88,8 @@ class SK9822Controller:
         data = []
         # Start frame: 4 bytes of 0x00
         data += [0x00, 0x00, 0x00, 0x00]
-        # LED data
-        data += led_data
+        # LED data - ensure all values are Python ints, not numpy types
+        data += [int(x) for x in led_data]
         # End frame: depends on number of LEDs
         # Formula: max(4, (NUM_LEDS + 15) // 16) ones + 4 zeros
         data += [0xFF] * max(4, (self.num_leds + 15) // 16) + [0x00, 0x00, 0x00, 0x00]
@@ -121,13 +121,13 @@ class SK9822Controller:
         
         # Build LED data frame
         # Initialize with all LEDs off at specified brightness
-        led_data = [0xE0 | self.brightness, 0x00, 0x00, 0x00] * self.num_leds
+        led_data = [int(0xE0 | self.brightness), 0x00, 0x00, 0x00] * self.num_leds
         
         # Set each LED
         for i in range(self.num_leds):
             # Only update if pixel changed (optimization)
             if not np.array_equal(p[:, i], self._prev_pixels[:, i]):
-                r, g, b = p[0, i], p[1, i], p[2, i]
+                r, g, b = int(p[0, i]), int(p[1, i]), int(p[2, i])
                 self.set_led(i, (r, g, b), self.brightness, led_data)
         
         # Send to strip
