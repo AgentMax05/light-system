@@ -191,7 +191,7 @@ def visualize_spectrum(y):
     _prev_spectrum = np.copy(y)
     # Color channel mappings
     r = r_filt.update(y - common_mode.value)
-    g = np.abs(diff)
+    g = g_filt.update(np.abs(diff))
     b = b_filt.update(np.copy(y))
     # Mirror the color channels for symmetric output
     r = np.concatenate((r[::-1], r))
