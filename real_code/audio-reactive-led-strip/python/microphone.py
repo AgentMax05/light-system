@@ -10,7 +10,18 @@ def start_stream(callback):
     
     # Try to open audio stream with error handling for sample rate
     stream = None
-    sample_rates_to_try = [config.MIC_RATE, 48000, 44100, 16000]
+    
+    # First, try to find and use the specific device (HD Pro Webcam C920)
+    input_device_index = None
+    for i in range(p.get_device_count()):
+        dev_info = p.get_device_info_by_index(i)
+        if dev_info['maxInputChannels'] > 0:
+            print(f"Found input device {i}: {dev_info['name']}")
+            if input_device_index is None:
+                input_device_index = i
+                print(f"  → Using this device")
+    
+    sample_rates_to_try = [config.MIC_RATE, 16000, 48000, 44100]
     
     for rate in sample_rates_to_try:
         try:
@@ -19,6 +30,7 @@ def start_stream(callback):
                           channels=1,
                           rate=rate,
                           input=True,
+                          input_device_index=input_device_index,
                           frames_per_buffer=int(rate / config.FPS))
             config.MIC_RATE = rate  # Update config with working rate
             frames_per_buffer = int(rate / config.FPS)
