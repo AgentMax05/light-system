@@ -205,8 +205,10 @@ def visualize_spectrum(y):
 
 fft_plot_filter = dsp.ExpFilter(np.tile(1e-1, config.N_FFT_BINS),
                          alpha_decay=0.5, alpha_rise=0.99)
+# mel_gain = dsp.ExpFilter(np.tile(1e-1, config.N_FFT_BINS),
+#                          alpha_decay=0.01, alpha_rise=0.99)
 mel_gain = dsp.ExpFilter(np.tile(1e-1, config.N_FFT_BINS),
-                         alpha_decay=0.01, alpha_rise=0.99)
+                         alpha_decay=0.2, alpha_rise=0.99)
 mel_smoothing = dsp.ExpFilter(np.tile(1e-1, config.N_FFT_BINS),
                          alpha_decay=0.5, alpha_rise=0.99)
 volume = dsp.ExpFilter(config.MIN_VOLUME_THRESHOLD,
