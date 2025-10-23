@@ -329,74 +329,83 @@ _level_filt   = dsp.ExpFilter(np.array([0.5]), alpha_decay=0.2, alpha_rise=0.8)
 _peak_hist    = deque(maxlen=30)  # ~0.5s at 60 FPS; for robust gain
 
 def visualize_party(y):
-    """LED visualizer tuned for party/rap music with strong beats and minimal flicker."""
+    """Party/rap visualizer – flicker-tamed, with adaptive visual floor (no fully-off LEDs)."""
     global _prev_spectrum, prev_scroll, _peak_hist
 
-    # --- Resize to half strip; we mirror later ---
+    # --- Resize to half strip & sanitize ---
     half = config.N_PIXELS // 2
     y = np.copy(interpolate(y, half))
     y = np.maximum(y, 0.0)
 
-    # --- Robust level estimate (prevents "dim after loud" hangover) ---
+    # --- Robust level estimate (prevents post-loudness dimming) ---
     _peak_hist.append(float(np.max(y)))
     level_est = np.percentile(_peak_hist, 95) if _peak_hist else float(np.max(y))
     lvl = float(_level_filt.update(np.array([level_est]))[0])
-    denom = np.clip(lvl, 0.15, 3.0)  # clamp to sane range
+    denom = np.clip(lvl, 0.20, 2.5)        # slightly higher floor & tighter top
     y = y / denom
 
-    # --- Common-mode baseline + above-baseline energy ---
+    # --- Common-mode baseline (less subtraction so lows don't collapse) ---
     common_mode.update(y)
-    y_above = np.clip(y - 0.7 * common_mode.value, 0.0, None)
+    y_above = np.clip(y - 0.5 * common_mode.value, 0.0, None)  # was 0.7
 
-    # --- Smoothed differencing for transients (kills shimmer/fizz) ---
+    # --- Smoothed differencing for transients ---
     y_sm = 0.7 * y + 0.3 * np.roll(y, 1)
     if _prev_spectrum is None or len(_prev_spectrum) != len(y_sm):
         _prev_spectrum = np.copy(y_sm)
     raw_diff = y_sm - _prev_spectrum
     _prev_spectrum = np.copy(y_sm)
 
-    # Deadband using MAD (ignore tiny frame-to-frame noise)
+    # Deadband (ignore tiny jitter) + soft compression
     med = np.median(raw_diff)
     mad = np.median(np.abs(raw_diff - med)) + 1e-6
-    tau = max(0.015, 2.0 * mad)  # tune: 1.5–3.0 * MAD
+    tau = max(0.015, 2.0 * mad)
     transients = np.clip(np.abs(raw_diff) - tau, 0.0, None)
-
-    # Soft compression on transients so spikes don’t dominate
     knee, ratio = 0.25, 3.0
     over = np.clip(transients - knee, 0.0, None)
     transients = transients - (1.0 - 1.0 / ratio) * over
 
     # --- Color channels ---
-    # Red: above-baseline energy + a touch of transient
+    # Red: above-baseline + a touch of transient
     r_raw = 1.4 * y_above + 0.15 * transients
     r = r_filt.update(r_raw)
 
-    # Green: compressed transients (lower gain + more smoothing)
-    g_raw = 1.2 * transients
+    # Green: compressed transients (lower gain & smoothing via g_filt)
+    g_raw = 1.1 * transients
     g = g_filt.update(g_raw)
 
-    # Blue: stable body/air (lightly smoothed), slightly reduced
+    # Blue: stable body/air (slightly reduced)
     smooth_y = 0.7 * y + 0.3 * np.roll(y, 1)
     b = b_filt.update(smooth_y) * 0.9
 
-    # --- Balance & gamma ---
+    # --- Balance ---
     r *= 1.25
-    g *= 1.10
+    g *= 1.05
     b *= 0.85
 
-    # Prevent green from dominating long-term
+    # Keep green in check vs. neighbors
     g = np.minimum(g, 1.1 * (0.5 * r + 0.5 * b) + 0.15)
 
+    # --- Adaptive visual floor to avoid fully-off LEDs ---
+    # Baseline rises a bit with average energy, but stays subtle.
+    avg_level = float(np.mean(y))
+    visual_floor = np.clip(0.03 + 0.5 * avg_level, 0.03, 0.12)  # 3%..12%
     rgb = np.vstack([r, g, b])
-    rgb = np.clip(rgb, 0.0, 1.0) ** (1.0 / 2.0)  # gamma 2.0
+    rgb = np.clip(rgb, 0.0, 1.0)
 
-    # --- Mirror for symmetry & gentle scroll ---
+    # Mix in the floor: rgb' = floor + (1 - floor)*rgb
+    rgb = visual_floor + (1.0 - visual_floor) * rgb
+
+    # Gentle gamma (brightens lows; helps avoid off pixels)
+    rgb = np.clip(rgb, 0.0, 1.0) ** (1.0 / 2.0)
+
+    # --- Mirror & scroll ---
     r_m = np.concatenate((rgb[0, ::-1], rgb[0]))
     g_m = np.concatenate((rgb[1, ::-1], rgb[1]))
     b_m = np.concatenate((rgb[2, ::-1], rgb[2]))
     output = np.array([r_m, g_m, b_m]) * 255.0
 
-    prev_scroll = (prev_scroll + 1) % config.N_PIXELS  # 1 px/frame; bump for faster motion
+    # 1–2 px/frame is nice for party ambience
+    prev_scroll = (prev_scroll + 1) % config.N_PIXELS
     return np.roll(output, shift=prev_scroll, axis=1)
 
 # To use, set:
