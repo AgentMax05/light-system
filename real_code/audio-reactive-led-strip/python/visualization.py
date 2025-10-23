@@ -86,20 +86,45 @@ def interpolate(y, new_length):
     z = np.interp(x_new, x_old, y)
     return z
 
-
-r_filt = dsp.ExpFilter(np.tile(0.01, config.N_PIXELS // 2),
-                       alpha_decay=0.2, alpha_rise=0.99)
-g_filt = dsp.ExpFilter(np.tile(0.01, config.N_PIXELS // 2),
-                       alpha_decay=0.05, alpha_rise=0.3)
-b_filt = dsp.ExpFilter(np.tile(0.01, config.N_PIXELS // 2),
-                       alpha_decay=0.1, alpha_rise=0.5)
-common_mode = dsp.ExpFilter(np.tile(0.01, config.N_PIXELS // 2),
-                       alpha_decay=0.99, alpha_rise=0.01)
+# ORIGINAL FILTERS:
+# r_filt = dsp.ExpFilter(np.tile(0.01, config.N_PIXELS // 2),
+#                        alpha_decay=0.2, alpha_rise=0.99)
+# g_filt = dsp.ExpFilter(np.tile(0.01, config.N_PIXELS // 2),
+#                        alpha_decay=0.05, alpha_rise=0.3)
+# b_filt = dsp.ExpFilter(np.tile(0.01, config.N_PIXELS // 2),
+#                        alpha_decay=0.1, alpha_rise=0.5)
+# common_mode = dsp.ExpFilter(np.tile(0.01, config.N_PIXELS // 2),
+#                        alpha_decay=0.99, alpha_rise=0.01)
 p_filt = dsp.ExpFilter(np.tile(1, (3, config.N_PIXELS // 2)),
                        alpha_decay=0.1, alpha_rise=0.99)
 p = np.tile(1.0, (3, config.N_PIXELS // 2))
+# gain = dsp.ExpFilter(np.tile(0.01, config.N_FFT_BINS),
+#                      alpha_decay=0.001, alpha_rise=0.99)
+
+# Make normalization fall faster so levels recover after loud parts
 gain = dsp.ExpFilter(np.tile(0.01, config.N_FFT_BINS),
-                     alpha_decay=0.001, alpha_rise=0.99)
+                     alpha_decay=0.05,  # was 0.001
+                     alpha_rise=0.95)   # was 0.99
+
+# Common-mode (baseline) that adapts reasonably in both directions
+common_mode = dsp.ExpFilter(np.tile(0.01, config.N_PIXELS // 2),
+                            alpha_decay=0.9,   # slower fall than 0.99
+                            alpha_rise=0.2)    # faster rise than 0.01
+
+# Red: emphasize energy above baseline, but let it decay faster so it’s visible
+r_filt = dsp.ExpFilter(np.tile(0.01, config.N_PIXELS // 2),
+                       alpha_decay=0.1,  # was 0.2
+                       alpha_rise=0.8)   # was 0.99
+
+# Green: actually filter it (you computed g_filt but didn’t use it); also boost it
+g_filt = dsp.ExpFilter(np.tile(0.01, config.N_PIXELS // 2),
+                       alpha_decay=0.2,  # more stable than 0.05
+                       alpha_rise=0.6)   # more responsive than 0.3
+
+# Blue: reduce persistence so it doesn’t wash out others
+b_filt = dsp.ExpFilter(np.tile(0.01, config.N_PIXELS // 2),
+                       alpha_decay=0.08,  # was 0.1
+                       alpha_rise=0.35)   # was 0.5
 
 
 def visualize_scroll(y):
