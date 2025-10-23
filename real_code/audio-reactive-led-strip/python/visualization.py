@@ -156,7 +156,7 @@ def visualize_energy(y):
 
 _prev_spectrum = np.tile(0.01, config.N_PIXELS // 2)
 
-
+prev_scroll = 0
 def visualize_spectrum(y):
     """Effect that maps the Mel filterbank frequencies onto the LED strip"""
     global _prev_spectrum
@@ -173,7 +173,9 @@ def visualize_spectrum(y):
     g = np.concatenate((g[::-1], g))
     b = np.concatenate((b[::-1], b))
     output = np.array([r, g,b]) * 255
-    return output
+    prev_scroll = (prev_scroll + 1) % config.N_PIXELS
+
+    return np.roll(output, axis=1, shift=prev_scroll)
 
 
 fft_plot_filter = dsp.ExpFilter(np.tile(1e-1, config.N_FFT_BINS),
