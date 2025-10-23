@@ -262,11 +262,13 @@ def visualize_wavepulse(y):
     gain.update(y)
     y /= gain.value
     y = np.clip(y, 0, 1)
-    # Create a color gradient (red to blue)
-    gradient = np.linspace(0, 1, config.N_PIXELS // 2)
-    r = (y * (1 - gradient)) * 255
-    g = (y * gradient) * 255
-    b = (np.abs(np.sin(gradient * np.pi + np.sum(y))) * y) * 255
+    # Interpolate y to match half the LED count
+    half_leds = config.N_PIXELS // 2
+    y_interp = interpolate(y, half_leds)
+    gradient = np.linspace(0, 1, half_leds)
+    r = (y_interp * (1 - gradient)) * 255
+    g = (y_interp * gradient) * 255
+    b = (np.abs(np.sin(gradient * np.pi + np.sum(y_interp))) * y_interp) * 255
     # Pulse effect: fade previous frame, add new pulse at center
     p *= 0.85  # Fade tails
     center = config.N_PIXELS // 4
