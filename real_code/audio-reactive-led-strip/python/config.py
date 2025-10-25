@@ -52,7 +52,8 @@ if DEVICE == 'pi-sk9822':
     """SPI bus number (usually 0 on Raspberry Pi)"""
     SPI_DEVICE = 0
     """SPI device number (usually 0)"""
-    SPI_SPEED_HZ = 1000000
+    # SPI_SPEED_HZ = 1000000
+    SPI_SPEED_HZ = 4000000
     """SPI clock speed in Hz (1MHz default, can go up to 4MHz for SK9822)"""
     SK9822_BRIGHTNESS = 1
     # SK9822_BRIGHTNESS = 2
@@ -67,7 +68,7 @@ USE_GUI = False
 DISPLAY_FPS = False
 """Whether to display the FPS when running (can reduce performance)"""
 
-N_PIXELS = 1200
+N_PIXELS = 1500
 # N_PIXELS = 300
 # N_PIXELS = 10
 """Number of pixels in the LED strip (must match ESP8266 firmware or actual strip length)"""
