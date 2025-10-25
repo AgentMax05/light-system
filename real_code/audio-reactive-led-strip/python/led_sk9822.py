@@ -19,7 +19,7 @@ class SK9822Controller:
     """Controller for SK9822/APA102 LED strips using SPI interface"""
     
     def __init__(self, num_leds, spi_bus=0, spi_device=0, max_speed_hz=1000000, 
-                 brightness=31, software_gamma=True):
+                 brightness=31, software_gamma=True, max_transfer_bytes=None):
         """
         Initialize SK9822 LED controller
         
@@ -37,6 +37,8 @@ class SK9822Controller:
             Global brightness (0-31), default is maximum (31)
         software_gamma : bool
             Whether to apply software gamma correction
+        max_transfer_bytes : int | None
+            Max bytes per SPI transfer. If None, auto-detect (Linux spidev bufsiz) or fallback to 4096.
         """
         if not SPI_AVAILABLE:
             raise RuntimeError("spidev is not installed. Cannot use SK9822 LEDs.")
@@ -51,11 +53,29 @@ class SK9822Controller:
         self.spi.max_speed_hz = max_speed_hz
         self.spi.mode = 0
         self.spi.lsbfirst = False
+        # Determine safe maximum transfer size for this system/driver
+        self.max_transfer_bytes = (max_transfer_bytes
+                                   if isinstance(max_transfer_bytes, int) and max_transfer_bytes > 0
+                                   else self._detect_max_transfer_bytes())
         
         # Previous pixel values for change detection
         self._prev_pixels = np.tile(253, (3, num_leds))
         
         print(f"SK9822 controller initialized: {num_leds} LEDs on SPI {spi_bus}.{spi_device} @ {max_speed_hz}Hz")
+
+    def _detect_max_transfer_bytes(self):
+        """Determine the maximum SPI transfer size.
+
+        On Linux with spidev, a common limit is controlled by /sys/module/spidev/parameters/bufsiz
+        which defaults to 4096 bytes on many systems. If the file is not accessible, return 4096.
+        """
+        fallback = 4096
+        try:
+            with open('/sys/module/spidev/parameters/bufsiz', 'r') as f:
+                size = int(f.read().strip())
+                return max(512, size)
+        except Exception:
+            return fallback
     
     def set_led(self, index, color, brightness, dataframe):
         """
@@ -93,8 +113,14 @@ class SK9822Controller:
         # End frame: depends on number of LEDs
         # Formula: max(4, (NUM_LEDS + 15) // 16) ones + 4 zeros
         data += [0xFF] * max(4, (self.num_leds + 15) // 16) + [0x00, 0x00, 0x00, 0x00]
-        
-        self.spi.xfer2(data)
+
+        # Chunk transfers to avoid exceeding SPI driver's maximum transfer size
+        max_len = int(self.max_transfer_bytes)
+        if len(data) <= max_len:
+            self.spi.xfer2(data)
+        else:
+            for start in range(0, len(data), max_len):
+                self.spi.xfer2(data[start:start + max_len])
     
     def update(self, pixels, gamma_table=None):
         """
