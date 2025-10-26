@@ -208,7 +208,7 @@ def visualize_spectrum(y):
     g = np.concatenate((g[::-1], g))
     b = np.concatenate((b[::-1], b))
     output = np.array([r, g,b]) * 255
-    prev_scroll = (prev_scroll + 1) % config.N_PIXELS
+    prev_scroll = (prev_scroll + 10) % config.N_PIXELS
 
     return np.roll(output, axis=1, shift=prev_scroll)
 
