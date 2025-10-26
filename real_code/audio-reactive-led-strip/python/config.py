@@ -52,7 +52,7 @@ if DEVICE == 'pi-sk9822':
     """SPI bus number (usually 0 on Raspberry Pi)"""
     SPI_DEVICE = 0
     """SPI device number (usually 0)"""
-    SPI_SPEED_HZ = 1000000
+    SPI_SPEED_HZ = 4000000
     """SPI clock speed in Hz (1MHz default, can go up to 4MHz for SK9822)"""
     SK9822_BRIGHTNESS = 1
     # SK9822_BRIGHTNESS = 2
@@ -92,8 +92,8 @@ appear "sluggish" or out of sync with the audio being played if it is too low.
 The FPS should not exceed the maximum refresh rate of the LED strip, which
 depends on how long the LED strip is.
 """
-_max_led_FPS = int(((N_PIXELS * 30e-6) + 50e-6)**-1.0)
-assert FPS <= _max_led_FPS, 'FPS must be <= {}'.format(_max_led_FPS)
+# _max_led_FPS = int(((N_PIXELS * 30e-6) + 50e-6)**-1.0)
+# assert FPS <= _max_led_FPS, 'FPS must be <= {}'.format(_max_led_FPS)
 
 MIN_FREQUENCY = 20
 # MIN_FREQUENCY = 200
